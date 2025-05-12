@@ -1,0 +1,127 @@
+<!DOCTYPE html>  <!-- HTML5 doctype declaration -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8"> <!-- Ensure proper character encoding -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsive scaling -->
+    <title>AI Journal</title>  <!-- Page title in browser tab -->
+
+    <!-- Link to shared CSS stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Optional internal CSS for layout if not using style.css -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            font-size: 16px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            resize: vertical;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #3498db;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #summary {
+            margin-top: 25px;
+            font-size: 18px;
+            color: #34495e;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+<!-- Main wrapper container -->
+<div class="container">
+
+    <!-- Page heading -->
+    <h1>AI Journal</h1>
+
+    <!-- Input label (optional, currently empty for accessibility) -->
+    <label for="entry"></label>
+
+    <!-- Textarea for user to write their journal entry -->
+    <textarea id="entry" placeholder='Write Here...'></textarea>
+    <br>
+
+    <!-- Button that triggers the analysis function -->
+    <button onclick="submitEntry()">Analyze</button>
+
+    <!-- Area where the summary will be displayed -->
+    <p id="summary">Waiting...</p>
+
+</div>
+
+<!-- 🧠 JavaScript to handle form submission and connect to the Flask API -->
+<script>
+    async function submitEntry() {
+        // Get user input from textarea
+        const entry = document.getElementById("entry").value;
+
+        // Get the element where the result will be shown
+        const summaryElem = document.getElementById("summary");
+
+        // Show a loading message
+        summaryElem.textContent = "⏳ Analyzing...";
+
+        try {
+            // Send POST request to Python Flask backend
+            const response = await fetch("http://127.0.0.1:5000/analyze", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"  // Tells Flask we're sending JSON
+                },
+                body: JSON.stringify({ entry: entry })  // Send entry text as JSON
+            });
+
+            // Parse the response JSON from Flask
+            const data = await response.json();
+
+            // Display the summary returned by Flask
+            summaryElem.textContent = "🧠 Summary: " + data.summary;
+
+        } catch (error) {
+            // Handle errors (like if Flask server isn't running)
+            summaryElem.textContent = "❌ Error contacting AI service.";
+            console.error("Fetch error:", error);
+        }
+    }
+</script>
+
+</body>
+</html>

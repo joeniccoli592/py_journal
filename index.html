@@ -1,0 +1,81 @@
+<!DOCTYPE html> <!-- HTML5 doctype declaration -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Journal</title> <!-- Title shown in browser tab -->
+    <link rel="stylesheet" href="index.css"> <!-- Link to external stylesheet -->
+</head>
+<body>
+
+<!-- 🧾 Main wrapper for layout -->
+<div class="container">
+
+    <!-- 📝 Left Section: Label and Instructions -->
+    <div class="left">
+        <h2>✍️ New<br>Journal Entry</h2>
+        <p>Write your thoughts and let AI summarize them for you.</p>
+    </div>
+
+    <!-- ✍️ Middle Section: Entry Box + Button -->
+    <div class="middle">
+        <!-- Journal input -->
+        <textarea id="entry" placeholder="Write here..."></textarea>
+
+        <!-- Button triggers AI analysis -->
+        <button onclick="submitEntry()">Analyze</button>
+    </div>
+
+    <!-- 💡 Right Section: Summary Output and Links -->
+    <div class="right">
+        <p><strong>💭 Summary:</strong> <span id="summary">Awaiting input...</span></p>
+
+        <!-- 🔗 Navigation links -->
+        <div class="links">
+            <a href="index.html">🏠 Home</a><br>
+            <a href="history.html">📜 View History</a>
+        </div>
+    </div>
+
+</div>
+
+<!-- 🔧 JavaScript handles form submission -->
+<script>
+    async function submitEntry() {
+        const entry = document.getElementById("entry").value;
+        const summaryElem = document.getElementById("summary");
+
+        // Show a loading message
+        summaryElem.textContent = "Waiting...";
+
+        try {
+            // 🔄 Send POST request to Flask backend
+            const response = await fetch("http://127.0.0.1:5000/analyze", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ entry: entry })
+            });
+
+            const data = await response.json();
+
+            // 🧠 Display summary result
+            summaryElem.textContent = data.summary;
+
+            // ✅ Clear textarea
+            document.getElementById("entry").value = "";
+
+            // 🔁 Redirect to history page after a short delay
+            setTimeout(() => {
+                window.location.href = "history.html";
+            }, 1500); // 1.5 second pause before redirect
+
+        } catch (error) {
+            summaryElem.textContent = "Error contacting AI service.";
+            console.error("Fetch error:", error);
+        }
+    }
+</script>
+
+</body>
+</html>

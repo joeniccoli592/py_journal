@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Journal History</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .header h1::before {
+            content: "📘";
+            font-size: 28px;
+            margin-right: 8px;
+        }
+
+        #search {
+            padding: 8px;
+            width: 280px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        th.sortable:hover {
+            cursor: pointer;
+            background-color: #3e5771;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Page Header with Search and Export -->
+    <div class="header">
+        <h1>📘 AI Journal History</h1>
+        <div>
+            <!-- Search input box -->
+            <input type="text" id="search" placeholder="Search entries or summaries..." onkeyup="filterTable()" />
+            <!-- CSV export button -->
+            <button onclick="exportToCSV()">⬇️ Export CSV</button>
+        </div>
+    </div>
+
+    <!-- Journal table -->
+    <table id="history-table">
+        <thead>
+            <tr>
+                <!-- Sortable columns -->
+                <th class="sortable" onclick="sortTable(0)">Entry</th>
+                <th class="sortable" onclick="sortTable(1)">AI Summary</th>
+                <th class="sortable" onclick="sortTable(2)">Timestamp</th>
+            </tr>
+        </thead>
+        <tbody id="history-body">
+            <!-- Entries will be dynamically inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        // ✅ Fetch history data from the Flask backend and populate the table
+        async function loadHistory() {
+            try {
+                const response = await fetch("http://127.0.0.1:5000/history");
+                const data = await response.json();
+                const tbody = document.getElementById("history-body");
+                tbody.innerHTML = ''; // Clear previous rows
+
+                // Populate each row from the response
+                data.forEach(entry => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${entry.entry}</td>
+                        <td>${entry.summary}</td>
+                        <td>${new Date(entry.timestamp).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("❌ Error loading history:", error);
+            }
+        }
+
+        // 🔍 Filter rows based on search input
+        function filterTable() {
+            const input = document.getElementById("search").value.toLowerCase();
+            const rows = document.querySelectorAll("#history-table tbody tr");
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? "" : "none";
+            });
+        }
+
+        // 🔃 Sort the table by the specified column index
+        function sortTable(colIndex) {
+            const table = document.getElementById("history-table");
+            const rows = Array.from(table.rows).slice(1); // Exclude header
+            const isReversed = table.sortedCol === colIndex;
+
+            rows.sort((a, b) => {
+                const aText = a.cells[colIndex].innerText;
+                const bText = b.cells[colIndex].innerText;
+                return aText.localeCompare(bText);
+            });
+
+            if (isReversed) rows.reverse(); // Toggle ascending/descending
+            table.sortedCol = isReversed ? null : colIndex;
+
+            const tbody = table.querySelector("tbody");
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // 📤 Export table content to CSV
+        function exportToCSV() {
+            const rows = document.querySelectorAll("#history-table tr");
+            const csv = [];
+
+            rows.forEach(row => {
+                const cols = Array.from(row.querySelectorAll("th, td"))
+                    .map(col => `"${col.innerText.replace(/"/g, '""')}"`);
+                csv.push(cols.join(","));
+            });
+
+            const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "journal_history.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 🔄 Initialize on page load
+        loadHistory();
+    </script>
+</body>
+</html>
